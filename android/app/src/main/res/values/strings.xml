@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Munnar Hotel Recommender</string>
+    <string name="title_activity_main">Munnar Hotel Recommender</string>
+    <string name="package_name">com.munnarhotels.app</string>
+    <string name="custom_url_scheme">com.munnarhotels.app</string>
+</resources>
