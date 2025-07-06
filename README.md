@@ -15,7 +15,7 @@ A smart hotel recommendation system for Munnar, Kerala that helps tourists find 
 
 ## 🚀 Live Demo
 
-[Deploy your app and add the Vercel URL here]
+[Add your Vercel URL here - e.g., https://munnar-hotel-recommender-xxxxx.vercel.app]
 
 ## 📱 Mobile App
 
@@ -220,7 +220,7 @@ This project is licensed under the MIT License.
 
 ## 👨‍💻 Author
 
-**Your Name** - [Your GitHub Profile]
+**Maitreyee** - [GitHub Profile](https://github.com/Maitreyeech17)
 
 ## 🙏 Acknowledgments
 
