@@ -15,7 +15,7 @@ A smart hotel recommendation system for Munnar, Kerala that helps tourists find 
 
 ## 🚀 Live Demo
 
-[Add your Vercel URL here - e.g., https://munnar-hotel-recommender-xxxxx.vercel.app]
+🌐 **Live App**: [https://munnar-hotel-recommender-git-main-mais-projects-9bd3007b.vercel.app](https://munnar-hotel-recommender-git-main-mais-projects-9bd3007b.vercel.app)
 
 ## 📱 Mobile App
 
