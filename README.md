@@ -4,12 +4,12 @@ A smart hotel recommendation system for Munnar, Kerala that helps tourists find 
 
 ## ✨ Features
 
-- **Smart Recommendations**: AI-powered hotel suggestions based on selected tourist spots
+- **Smart Recommendations**: Personalized hotel suggestions based on selected tourist spots
 - **Interactive Map**: Visual representation of hotels and tourist spots
 - **Advanced Filtering**: Filter by price range, minimum rating, and amenities
 - **Mobile Responsive**: Works perfectly on desktop, tablet, and mobile devices
 - **Dark/Light Mode**: Toggle between themes for better user experience
-- **Real Hotel Data**: Includes 20 real hotels in Munnar with authentic information
+- **Batch Hotel Images**: Generic hotel images fetched from Pixabay and distributed across cards
 - **Tourist Spot Integration**: 8 popular tourist destinations in Munnar
 - **Detailed Analysis**: View recommendation scores and reasoning
 
@@ -23,9 +23,10 @@ Download the Android APK: `munnar-hotel-app.apk`
 
 ## 🛠️ Technologies Used
 
-- **Frontend**: React.js, TypeScript
+- **Frontend**: React.js (TypeScript or JavaScript)
 - **Styling**: CSS3 with responsive design
 - **Maps**: Google Maps integration
+- **Images**: Pixabay API (generic hotel images)
 - **Mobile**: Capacitor for Android app
 - **Deployment**: Vercel (web), APK (mobile)
 
@@ -53,7 +54,15 @@ cd munnar-hotel-recommender
 npm install
 ```
 
-### 3. Start Development Server
+### 3. Set Your Pixabay API Key
+
+Edit `src/services/pixabayImageService.ts` and replace `YOUR_PIXABAY_API_KEY` with your actual Pixabay API key:
+
+```js
+const PIXABAY_API_KEY = 'YOUR_PIXABAY_API_KEY';
+```
+
+### 4. Start Development Server
 
 ```bash
 npm start
@@ -61,7 +70,7 @@ npm start
 
 The app will open in your browser at `http://localhost:3000`
 
-### 4. Build for Production
+### 5. Build for Production
 
 ```bash
 npm run build
@@ -104,13 +113,15 @@ npx cap run android
 ```
 munnar-hotel-recommender/
 ├── public/
-│   ├── images/          # Hotel images (hotel-1.jpg to hotel-20.jpg)
+│   ├── images/          # (Optional) Local hotel images
 │   └── index.html
 ├── src/
 │   ├── App.tsx          # Main application component
 │   ├── App.css          # Styles
 │   ├── data.ts          # Hotel and tourist spot data
 │   ├── MapView.tsx      # Map component
+│   ├── components/      # UI components (HotelCard, Map, etc.)
+│   ├── services/        # API and utility services
 │   └── index.tsx        # Entry point
 ├── android/             # Android project files
 ├── capacitor.config.ts  # Capacitor configuration
@@ -121,19 +132,19 @@ munnar-hotel-recommender/
 
 1. **Select Tourist Spots**: Choose at least 5 tourist spots you want to visit
 2. **Set Filters**: Adjust price range and minimum rating
-3. **Get Recommendations**: Click "Recommend Hotels" to get personalized suggestions
+3. **Get Recommendations**: Click "Get Hotel Recommendations" to get personalized suggestions
 4. **View Details**: See hotel information, amenities, and scores
 5. **Map View**: Toggle map view to see hotel locations
 6. **Analysis**: View detailed scoring breakdown
 
-## 🏨 Hotel Data
+## 🏨 Hotel Data & Images
 
-The app includes 20 real hotels in Munnar with:
-- Authentic hotel names and locations
-- Realistic pricing (₹2,200 - ₹5,800 per night)
-- Actual amenities and features
-- High-quality images
-- Accurate ratings and reviews
+- The app includes 20 real hotels in Munnar with:
+  - Authentic hotel names and locations
+  - Realistic pricing (₹2,200 - ₹5,800 per night)
+  - Actual amenities and features
+  - Accurate ratings
+- **Images:** Hotel cards display generic hotel images fetched from Pixabay. These are not actual photos of the hotels, but ensure a visually appealing experience.
 
 ## 🗺️ Tourist Spots
 
@@ -165,7 +176,7 @@ The app includes 20 real hotels in Munnar with:
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (for Google Maps, if used):
 
 ```env
 REACT_APP_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
@@ -192,11 +203,8 @@ const config: CapacitorConfig = {
    ```bash
    npm install
    ```
-
-2. **Images not loading**: Check if images are in `public/images/` folder
-
+2. **Images not loading**: Ensure your Pixabay API key is set and valid in `pixabayImageService.ts`
 3. **Mobile app not working**: Ensure Android Studio is properly configured
-
 4. **Map not showing**: Verify Google Maps API key is set
 
 ### Development Tips
@@ -227,6 +235,7 @@ This project is licensed under the MIT License.
 - Munnar tourism data
 - Hotel information and images
 - Tourist spot coordinates
+- Pixabay for hotel images
 - React and Capacitor communities
 
 ---

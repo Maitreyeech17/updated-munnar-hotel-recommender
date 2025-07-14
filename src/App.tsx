@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { TOURIST_SPOTS, HOTELS } from './data.ts';
 import MapView from './MapView.tsx';
+import SimpleMap from './components/SimpleMap.tsx';
+import WeatherInfo from './components/WeatherInfo.tsx';
+import { getRoute } from './services/transportationService.ts';
+import EnhancedHotelCard from './components/EnhancedHotelCard.tsx';
+import { fetchPixabayImages } from './services/pixabayImageService.ts';
 
-interface TouristSpot {
-  id: number;
-  name: string;
-  lat: number;
-  lng: number;
-}
 
 interface Hotel {
   id: number;
@@ -31,31 +30,32 @@ interface HotelRecommendation {
   priceScore: number;
 }
 
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const R = 6371; // km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+
 
 function App() {
   const [selectedSpots, setSelectedSpots] = useState<number[]>([]);
   const [recommendations, setRecommendations] = useState<HotelRecommendation[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [priceRange, setPriceRange] = useState([1500, 6000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([1500, 6000]);
   const [minRating, setMinRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [routeCoords, setRouteCoords] = useState<Array<Array<[number, number]>>>([]);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [hotelImages, setHotelImages] = useState([]);
+
+
+  useEffect(() => {
+    const loadImages = async () => {
+      const images = await fetchPixabayImages('hotel', 10); // Fetch 10 images
+      setHotelImages(images);
+    };
+    loadImages();
+  }, []);
+
 
   const handleSpotChange = (id: number) => {
     setSelectedSpots((prev) =>
@@ -64,6 +64,12 @@ function App() {
         : [...prev, id]
     );
   };
+
+
+
+
+
+
 
   const getRecommendations = () => {
     setIsLoading(true);
@@ -130,262 +136,231 @@ function App() {
     }, 1500);
   };
 
+  // Handler to show route from first selected tourist spot to hotel
+  const handleShowRoute = async (hotelLat: number, hotelLng: number) => {
+    if (selectedSpots.length === 0) {
+      setRouteError('Select at least one tourist spot');
+      return;
+    }
+    setRouteLoading(true);
+    setRouteError(null);
+    try {
+      const routes: Array<Array<[number, number]>> = [];
+      for (const spotId of selectedSpots) {
+        const spot = TOURIST_SPOTS.find(s => s.id === spotId);
+        if (!spot) continue;
+        const data = await getRoute(spot.lat, spot.lng, hotelLat, hotelLng);
+        console.log('OSRM route response:', data); // Debug: log the full API response
+        const coords = data.routes[0]?.geometry?.coordinates?.map(([lng, lat]: [number, number]) => [lat, lng]) || [];
+        console.log('Polyline coordinates:', coords); // Debug: log the polyline coordinates
+        if (coords.length > 0) routes.push(coords);
+      }
+      setRouteCoords(routes);
+    } catch (e: any) {
+      setRouteError(e.message || 'Failed to fetch route');
+    } finally {
+      setRouteLoading(false);
+    }
+  };
+
   const selectedTouristSpots = TOURIST_SPOTS.filter((s) => selectedSpots.includes(s.id));
 
   return (
     <div className={`App ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
-      <div className="header-controls">
-        <h1>🏔️ Munnar Hotel Recommender</h1>
-        <button 
-          className="theme-toggle"
-          onClick={() => setIsDarkMode(!isDarkMode)}
-        >
-          {isDarkMode ? '☀️' : '🌙'}
-        </button>
-      </div>
-      
-      <div className="spots-container">
-        <div className="spots-section">
-          <h2>Select Tourist Spots (Choose at least 5)</h2>
-          <div className="spots-grid">
-            {TOURIST_SPOTS.map((spot) => (
-              <label key={spot.id} className="spot-item">
-                <input
-                  type="checkbox"
-                  checked={selectedSpots.includes(spot.id)}
-                  onChange={() => handleSpotChange(spot.id)}
-                />
-                <span>{spot.name}</span>
-              </label>
-            ))}
-          </div>
-          {selectedSpots.length < 5 && (
-            <p className="warning">Please select at least 5 tourist spots</p>
-          )}
+      <div className="main-center-container">
+        <div className="header-controls">
+          <h1>🏔️ Munnar Hotel Recommender</h1>
+          <button 
+            className="theme-toggle"
+            onClick={() => setIsDarkMode(!isDarkMode)}
+          >
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
         </div>
 
-        <div className="filters-section">
+        <WeatherInfo city="Munnar" />
+
+        {/* Interactive Map Section - Temporarily disabled */}
+        {/* 
+        <div style={{ marginBottom: '20px', padding: '0 20px' }}>
+          <h3 style={{ textAlign: 'center', marginBottom: '15px', color: isDarkMode ? '#ffffff' : '#2c3e50' }}>
+            🗺️ Interactive Munnar Map
+          </h3>
+          <p style={{ textAlign: 'center', marginBottom: '15px', color: isDarkMode ? '#bdc3c7' : '#7f8c8d' }}>
+            Explore hotels and tourist spots in Munnar. Click on markers for details.
+          </p>
+          <LeafletMap 
+            hotels={HOTELS}
+            touristSpots={TOURIST_SPOTS}
+            center={[10.0889, 77.0622]} // Munnar center
+            zoom={11}
+          />
+        </div>
+        */}
+        
+
+        
+
+        
+        <div className="spots-container">
+          <div className="spots-section">
+            <h2>Select Tourist Spots (Choose at least 5)</h2>
+            <div className="spots-grid">
+              {TOURIST_SPOTS.map((spot) => (
+                <label key={spot.id} className="spot-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedSpots.includes(spot.id)}
+                    onChange={() => handleSpotChange(spot.id)}
+                  />
+                  <span>{spot.name}</span>
+                </label>
+              ))}
+            </div>
+            
+            <div className="spots-summary">
+              <p>
+                Selected: <strong>{selectedSpots.length}</strong> spots
+                {selectedSpots.length < 5 && (
+                  <span className="warning"> (Need at least 5 for best recommendations)</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="filters-container">
           <button 
-            className="filter-toggle"
+            className="filters-toggle"
             onClick={() => setShowFilters(!showFilters)}
           >
             {showFilters ? 'Hide' : 'Show'} Filters
           </button>
           
           {showFilters && (
-            <div className="filters-content">
+            <div className="filters-panel">
               <div className="filter-group">
-                <label>Price Range (₹): ₹{priceRange[0].toLocaleString()} - ₹{priceRange[1].toLocaleString()}</label>
-                <div className="price-slider">
+                <label>Price Range (₹):</label>
+                <div className="price-range">
                   <input
                     type="range"
-                    min="1500"
-                    max="6000"
-                    step="100"
+                    min="1000"
+                    max="8000"
                     value={priceRange[0]}
                     onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
                   />
                   <input
                     type="range"
-                    min="1500"
-                    max="6000"
-                    step="100"
+                    min="1000"
+                    max="8000"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                   />
-                </div>
-                <div className="price-range-display">
-                  <span>Min: ₹{priceRange[0].toLocaleString()}</span>
-                  <span>Max: ₹{priceRange[1].toLocaleString()}</span>
+                  <span>₹{priceRange[0]} - ₹{priceRange[1]}</span>
                 </div>
               </div>
               
               <div className="filter-group">
-                <label>Minimum Rating: {minRating}+</label>
-                <div className="rating-filter">
-                  {[0, 3, 3.5, 4, 4.5].map(rating => (
-                    <button
-                      key={rating}
-                      className={`rating-btn ${minRating === rating ? 'active' : ''}`}
-                      onClick={() => setMinRating(rating)}
-                    >
-                      {rating === 0 ? 'Any' : `${rating}+`}
-                    </button>
+                <label>Minimum Rating:</label>
+                <select 
+                  value={minRating} 
+                  onChange={(e) => setMinRating(parseFloat(e.target.value))}
+                >
+                  <option value={0}>Any Rating</option>
+                  <option value={3.5}>3.5+ Stars</option>
+                  <option value={4.0}>4.0+ Stars</option>
+                  <option value={4.5}>4.5+ Stars</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="recommendations-container">
+          <button 
+            className="get-recommendations-btn"
+            onClick={getRecommendations}
+            disabled={selectedSpots.length < 5 || isLoading}
+          >
+            {isLoading ? 'Finding Hotels...' : 'Get Hotel Recommendations'}
+          </button>
+          
+          {recommendations.length > 0 && (
+            <div className="recommendations-section">
+              <h2>🏨 Top Hotel Recommendations</h2>
+              <div className="recommendations-grid">
+                {recommendations.map((rec, idx) => (
+                  <EnhancedHotelCard
+                    key={rec.hotel.id}
+                    recommendation={rec}
+                    isDarkMode={isDarkMode}
+                    onShowRoute={handleShowRoute}
+                    routeLoading={routeLoading}
+                    imageUrl={hotelImages[idx % hotelImages.length]}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {selectedSpots.length > 0 && (
+          <div className="map-container">
+            <button 
+              className="map-toggle-btn"
+              onClick={() => setShowMap(!showMap)}
+            >
+              {showMap ? 'Hide' : 'Show'} Map View
+            </button>
+            
+            {showMap && (
+              <SimpleMap hotels={HOTELS} touristSpots={TOURIST_SPOTS} route={routeCoords} />
+            )}
+          </div>
+        )}
+
+        {recommendations.length > 0 && (
+          <div className="analysis-container">
+            <button 
+              className="analysis-toggle-btn"
+              onClick={() => setShowAnalysis(!showAnalysis)}
+            >
+              {showAnalysis ? 'Hide' : 'Show'} Analysis
+            </button>
+            
+            {showAnalysis && (
+              <div className="analysis-panel">
+                <h3>📊 Recommendation Analysis</h3>
+                <div className="analysis-grid">
+                  {recommendations.map((rec, index) => (
+                    <div key={rec.hotel.id} className="analysis-item">
+                      <h4>{rec.hotel.name}</h4>
+                      <div className="score-breakdown">
+                        <div className="score-item">
+                          <span>Distance Score:</span>
+                          <span>{(rec.distanceScore * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="score-item">
+                          <span>Centrality Score:</span>
+                          <span>{(rec.centralityScore * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="score-item">
+                          <span>Rating Score:</span>
+                          <span>{(rec.ratingScore * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="score-item">
+                          <span>Price Score:</span>
+                          <span>{(rec.priceScore * 100).toFixed(1)}%</span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-        
-        <button
-          className="recommend-button"
-          onClick={getRecommendations}
-          disabled={selectedSpots.length < 5}
-        >
-          🏨 Recommend Hotels ({selectedSpots.length} spots)
-        </button>
-      </div>
-      
-      {recommendations.length > 0 && (
-        <>
-          <button
-            className={`map-toggle ${showMap ? 'active' : ''}`}
-            onClick={() => setShowMap(!showMap)}
-          >
-            {showMap ? '🗺️ Hide Map' : '🗺️ Show Map View'}
-          </button>
-          
-          <MapView
-            selectedSpots={selectedTouristSpots}
-            recommendations={recommendations}
-            isVisible={showMap}
-          />
-        </>
-      )}
-      
-      {recommendations.length > 0 && (
-        <div className="recommendations-section">
-          <div className="recommendations-header">
-            <h2>Recommended Hotels</h2>
-            {recommendations.length > 0 && (
-              <button 
-                className="analysis-toggle"
-                onClick={() => setShowAnalysis(!showAnalysis)}
-              >
-                {showAnalysis ? 'Hide' : 'Show'} Analysis
-              </button>
             )}
           </div>
-          
-          {showAnalysis && recommendations.length > 0 && (
-            <div className="analysis-panel">
-              <h3>📊 Recommendation Analysis</h3>
-              <div className="analysis-content">
-                <div className="analysis-item">
-                  <strong>Selected Spots:</strong> {selectedSpots.length} locations
-                </div>
-                <div className="analysis-item">
-                  <strong>Price Range:</strong> ₹{priceRange[0]} - ₹{priceRange[1]}
-                </div>
-                <div className="analysis-item">
-                  <strong>Minimum Rating:</strong> {minRating === 0 ? 'Any' : `${minRating}+`}
-                </div>
-                <div className="analysis-item">
-                  <strong>Scoring Factors:</strong>
-                  <ul>
-                    <li>Distance to spots (30%)</li>
-                    <li>Centrality to all spots (30%)</li>
-                    <li>Hotel rating (20%)</li>
-                    <li>Price value (20%)</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="hotels-grid">
-            {recommendations.map((rec, index) => (
-              <div key={rec.hotel.id} className="hotel-card">
-                <div className="hotel-image">
-                  <img 
-                    src={`/images/hotel-${rec.hotel.id}.jpg`} 
-                    alt={rec.hotel.name}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      // Show a placeholder or fallback content
-                      const imageContainer = e.currentTarget.parentElement;
-                      if (imageContainer) {
-                        imageContainer.innerHTML = `
-                          <div class="hotel-image-placeholder">
-                            <div class="placeholder-icon">🏨</div>
-                            <div class="placeholder-text">${rec.hotel.name}</div>
-                          </div>
-                        `;
-                      }
-                    }}
-                  />
-                </div>
-                
-                <div className="hotel-header">
-                  <h3>{rec.hotel.name}</h3>
-                  <div className="hotel-rating">
-                    <span className="stars">{'★'.repeat(Math.floor(rec.hotel.rating))}</span>
-                    <span className="rating-text">{rec.hotel.rating}/5</span>
-                  </div>
-                </div>
-                
-                <div className="hotel-details">
-                  <p className="hotel-location">📍 {rec.hotel.location}</p>
-                  <p className="hotel-price">₹{rec.hotel.price}/night</p>
-                  
-                  <div className="amenities-section">
-                    <h5 className="amenities-title">🏨 Amenities</h5>
-                    <div className="hotel-amenities">
-                      {rec.hotel.amenities.map((amenity, idx) => (
-                        <span key={idx} className="amenity-tag">{amenity}</span>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="recommendation-scores">
-                    <div className="score-item">
-                      <span className="score-label">Match Score:</span>
-                      <span className="score-value">{(rec.score * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="score-item">
-                      <span className="score-label">Distance:</span>
-                      <span className="score-value">{(rec.distance * 100).toFixed(1)}km</span>
-                    </div>
-                    {showAnalysis && (
-                      <>
-                        <div className="score-item">
-                          <span className="score-label">Centrality:</span>
-                          <span className="score-value">{(rec.centralityScore * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="score-item">
-                          <span className="score-label">Rating Score:</span>
-                          <span className="score-value">{(rec.ratingScore * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="score-item">
-                          <span className="score-label">Price Score:</span>
-                          <span className="score-value">{(rec.priceScore * 100).toFixed(1)}%</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="hotel-actions">
-                  <button className="btn-primary">Book Now</button>
-                </div>
-                
-                <div className="why-choose-section">
-                  <h4>🏆 Why Choose This Hotel?</h4>
-                  <div className="why-choose-content">
-                    <div className="reason-item">
-                      <span className="reason-icon">📍</span>
-                      <span className="reason-text">Perfectly located near your selected spots</span>
-                    </div>
-                    <div className="reason-item">
-                      <span className="reason-icon">⭐</span>
-                      <span className="reason-text">High rating of {rec.hotel.rating}/5 stars</span>
-                    </div>
-                    <div className="reason-item">
-                      <span className="reason-icon">💰</span>
-                      <span className="reason-text">Great value at ₹{rec.hotel.price}/night</span>
-                    </div>
-                    <div className="reason-item">
-                      <span className="reason-icon">🎯</span>
-                      <span className="reason-text">{(rec.score * 100).toFixed(1)}% match score</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

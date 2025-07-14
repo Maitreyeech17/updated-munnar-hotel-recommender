@@ -10,6 +10,31 @@ export const TOURIST_SPOTS = [
   { id: 8, name: 'Chinnar Wildlife Sanctuary', lat: 10.3841, lng: 77.1436 },
 ];
 
+// Simple hotel names - just add names here and the system will generate everything else!
+export const HOTEL_NAMES = [
+  'Parakkat Nature Hotels & Resorts',
+  'Fragrant Nature Munnar',
+  'Amber Dale Luxury Hotel & Spa',
+  'Blanket Hotel & Spa',
+  'Tea County Munnar',
+  'Grand Plaza Munnar',
+  'Tea Museum Heritage Hotel',
+  'Spice Garden Resort',
+  'Misty Mountain Resort',
+  'Eravikulam View Resort',
+  'Mountain View Lodge',
+  'Tea Gardens Resort',
+  'Eco Valley Resort',
+  'Heritage Tea Resort',
+  'Adventure Base Resort',
+  // Add more hotel names here - just the names!
+  'Luxury Mountain Spa',
+  'Tea Garden Heritage Resort',
+  'Nature Valley Lodge',
+  'Munnar Heights Resort',
+  'Green Valley Hotel'
+];
+
 // Real Hotels in Munnar with websites - Optimized for 70-80% match scores
 export const HOTELS = [
   // Hotels near Tea Museum (central location, good for multiple spots)
