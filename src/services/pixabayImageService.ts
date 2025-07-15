@@ -1,4 +1,4 @@
-const PIXABAY_API_KEY = '51313661-5b8349626041b9aaf7e6be6a0'; // <-- Replace with your actual API key
+const PIXABAY_API_KEY = 'YOUR_API_KEY'; // <-- Replace with your actual API key
 const PIXABAY_API_URL = 'https://pixabay.com/api/';
 
 export async function fetchPixabayImages(query: string, perPage: number = 5): Promise<string[]> {
