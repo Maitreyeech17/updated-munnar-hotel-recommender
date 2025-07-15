@@ -1,4 +1,4 @@
-const API_KEY = '3b6f48dfa99c631abab6a019ee6224f2'; // <-- Paste your API key here
+const API_KEY = 'YOUR_API_KEY'; // <-- Paste your API key here
 
 export async function getWeatherByCity(city: string) {
   const response = await fetch(
